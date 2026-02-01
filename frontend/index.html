@@ -3,111 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studio 100 Ton - AI Video Generator</title>
+    <title>Studio 100 Ton | AI Video Creator</title>
+    <!-- 이케아 스타일 폰트 (Noto Sans KR) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        /* [1] 기본 설정: 이케아의 깨끗한 화이트 톤 */
         body {
-            background-color: #121212;
-            color: #ffffff;
-            font-family: 'Suit', sans-serif;
+            background-color: #ffffff; /* 깨끗한 흰색 배경 */
+            color: #111111; /* 가독성 좋은 진한 검정 */
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
+        }
+
+        /* [2] 헤더: 이케아 로고 느낌의 레이아웃 */
+        header {
+            width: 100%;
+            background-color: #ffffff;
+            padding: 25px 0;
+            text-align: center;
+            border-bottom: 1px solid #f5f5f5;
+            margin-bottom: 40px;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0058a3; /* 이케아 블루 */
+            letter-spacing: -0.5px;
             margin: 0;
         }
+        p.subtitle {
+            font-size: 14px;
+            color: #484848;
+            margin-top: 10px;
+        }
+
+        /* [3] 메인 컨테이너: 여백의 미 */
         .container {
-            width: 90%;
-            max-width: 600px;
-            text-align: center;
-            padding: 20px;
-            border: 1px solid #333;
-            border-radius: 15px;
-            background-color: #1e1e1e;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 700px; /* 너무 넓지 않게 집중 */
+            padding: 0 20px;
+            box-sizing: border-box;
         }
-        h1 { margin-bottom: 20px; font-size: 2rem; color: #00ff88; }
-        input {
-            width: 80%;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background-color: #2c2c2c;
-            color: white;
-            font-size: 1rem;
-            margin-bottom: 20px;
+
+        /* [4] 입력창: 심플하고 명확하게 */
+        .input-group {
+            margin-bottom: 30px;
         }
-        button {
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            background-color: #00ff88;
-            color: #121212;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
+        label {
+            display: block;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #111111;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 16px 20px; /* 넉넉한 여백 */
+            font-size: 16px;
+            border: 1px solid #dfdfdf; /* 튀지 않는 테두리 */
+            border-radius: 4px; /* 살짝 둥근 모서리 */
+            background-color: #f5f5f5; /* 아주 연한 회색 */
+            box-sizing: border-box;
             transition: 0.3s;
         }
-        button:hover { background-color: #00cc6a; }
-        
-        /* 결과 화면 스타일 */
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #0058a3; /* 포커스 시 블루 */
+            background-color: #ffffff;
+        }
+
+        /* [5] 버튼: 이케아의 '장바구니 담기' 버튼 스타일 */
+        button {
+            width: 100%;
+            padding: 18px;
+            background-color: #0058a3; /* 이케아 블루 */
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            border-radius: 30px; /* 둥근 캡슐형 버튼 */
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #004f91; /* 호버 시 약간 진하게 */
+        }
+
+        /* [6] 결과 영역: 카드형 디자인 */
         #result-area {
-            margin-top: 30px;
-            text-align: left;
-            display: none; /* 처음엔 숨김 */
-            background: #252525;
-            padding: 20px;
-            border-radius: 10px;
+            display: none; /* 초기엔 숨김 */
+            margin-top: 50px;
+            border-top: 2px solid #f5f5f5;
+            padding-top: 30px;
         }
-        .script-box {
-            white-space: pre-line;
-            line-height: 1.6;
-            background: #333;
-            padding: 15px;
-            border-radius: 5px;
+        .result-title {
+            font-size: 22px;
+            font-weight: 700;
             margin-bottom: 20px;
+            color: #111111;
         }
+        
+        /* 대본 박스: 종이에 쓴 듯한 느낌 */
+        .script-box {
+            background-color: #fff;
+            border: 1px solid #dfdfdf;
+            padding: 25px;
+            font-size: 15px;
+            line-height: 1.8;
+            color: #333;
+            border-radius: 8px;
+            white-space: pre-line;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* 살짝 뜨는 그림자 */
+        }
+
+        /* 이미지 그리드: 갤러리처럼 */
         .image-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            grid-template-columns: repeat(2, 1fr); /* 2열 배치 */
+            gap: 15px;
         }
-        img { width: 100%; border-radius: 5px; }
-        
-        /* 로딩 애니메이션 */
+        .image-card {
+            background: #f9f9f9;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .image-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.3s;
+        }
+        .image-card img:hover {
+            transform: scale(1.05); /* 마우스 올리면 살짝 확대 */
+        }
+
+        /* 로딩 애니메이션: 이케아 옐로우 & 블루 */
         .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #00ff88;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
             display: none;
+            margin: 30px auto;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0058a3; /* 블루 */
+            border-right: 4px solid #ffdb00; /* 옐로우 */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>🏭 Studio 100 Ton</h1>
-        <p>쇼핑몰/뉴스 링크를 넣으면 대본을 써드립니다.</p>
-        
-        <input type="text" id="urlInput" placeholder="https://... (링크를 붙여넣으세요)">
-        <br>
-        <button onclick="igniteEngine()">⚡ IGNITE (영상 생성)</button>
+    <header>
+        <h1>STUDIO 100 TON</h1>
+        <p class="subtitle">100억 가치의 영상을 만드는 AI 공장</p>
+    </header>
 
+    <div class="container">
+        <!-- 입력 섹션 -->
+        <div class="input-group">
+            <label for="urlInput">분석할 상품/기사 링크 (URL)</label>
+            <input type="text" id="urlInput" placeholder="예: 쿠팡, 네이버 뉴스 링크를 여기에 붙여넣으세요">
+        </div>
+        
+        <button onclick="igniteEngine()">
+            ⚡ 영상 생성 시작하기
+        </button>
+
+        <!-- 로딩 -->
         <div class="loader" id="loader"></div>
 
+        <!-- 결과 섹션 -->
         <div id="result-area">
-            <h3>✅ 분석 완료!</h3>
-            <p><strong>제목:</strong> <span id="res-title"></span></p>
+            <h2 class="result-title">✅ 분석 완료: <span id="res-title" style="color:#0058a3;"></span></h2>
             
-            <h4>📜 AI 대본 (Script)</h4>
+            <label>AI 대본 (Script)</label>
             <div class="script-box" id="res-script"></div>
 
-            <h4>📸 확보된 이미지</h4>
+            <label>확보된 이미지 소스</label>
             <div class="image-grid" id="res-images"></div>
         </div>
     </div>
@@ -118,15 +197,17 @@
             const loader = document.getElementById('loader');
             const resultArea = document.getElementById('result-area');
 
-            if (!url) { alert("링크를 입력해주세요!"); return; }
+            if (!url) { 
+                alert("링크를 입력해주세요! 공장이 멈췄습니다."); 
+                return; 
+            }
 
-            // 화면 초기화
+            // UI 초기화
             loader.style.display = "block";
             resultArea.style.display = "none";
 
             try {
-                // ⚠️ 여기 주소를 사장님 AWS IP로 꼭 확인하세요! (Source 169 참조)
-                // 현재 IP: 3.27.133.204
+                // 사장님 AWS 공장 주소 (변경 금지)
                 const response = await fetch("http://3.27.133.204:8000/ignite", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -136,26 +217,31 @@
                 const data = await response.json();
 
                 if (data.status === "error") {
-                    alert("에러 발생: " + data.message);
+                    alert("⚠️ 공장 에러: " + data.message);
                 } else {
-                    // 결과 보여주기
+                    // 결과 데이터 연결
                     document.getElementById('res-title').innerText = data.crawled_title;
                     document.getElementById('res-script').innerText = data.script;
                     
-                    // 이미지 뿌리기
+                    // 이미지 카드 생성
                     const imgContainer = document.getElementById('res-images');
-                    imgContainer.innerHTML = ""; // 기존 이미지 삭제
+                    imgContainer.innerHTML = "";
                     data.images.forEach(src => {
+                        const card = document.createElement("div");
+                        card.className = "image-card";
+                        
                         const img = document.createElement("img");
                         img.src = src;
-                        imgContainer.appendChild(img);
+                        
+                        card.appendChild(img);
+                        imgContainer.appendChild(card);
                     });
 
                     resultArea.style.display = "block";
                 }
             } catch (error) {
                 console.error(error);
-                alert("공장 연결 실패! (보안 설정이나 IP를 확인하세요)");
+                alert("🚨 공장 연결 실패!\n[해결책]\n1. 주소창 자물쇠 -> 사이트 설정 -> '안전하지 않은 콘텐츠' 허용\n2. AWS 서버가 켜져 있는지 확인");
             } finally {
                 loader.style.display = "none";
             }

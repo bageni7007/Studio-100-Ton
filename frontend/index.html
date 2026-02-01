@@ -1,88 +1,83 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studio 100 Ton</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* 이케아(IKEA) 스타일 */
-        body { background-color: #0051ba; font-family: 'Verdana', sans-serif; color: white; }
-        .ikea-yellow { color: #ffdb00; }
-        .ikea-btn { background-color: #ffdb00; color: #0051ba; }
-        .ikea-btn:hover { background-color: #e6c600; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .loading-spin { animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
-</head>
-<body class="flex flex-col items-center justify-center min-h-screen">
+from fastapi import FastAPI
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+import requests
+from bs4 import BeautifulSoup
 
-    <div class="text-center mb-10">
-        <h1 class="text-6xl font-black tracking-tighter mb-2">
-            STUDIO <span class="ikea-yellow">100 TON</span>
-        </h1>
-        <p class="text-sm tracking-widest bg-black/20 px-4 py-1 rounded inline-block">HYPER-SCALE VIDEO FACTORY</p>
-    </div>
+app = FastAPI()
 
-    <div class="w-full max-w-2xl px-6">
-        <input type="text" id="urlInput" 
-            class="w-full p-5 text-xl text-black font-bold rounded-full border-4 border-[#ffdb00] focus:outline-none shadow-xl"
-            placeholder="상품 링크를 투입하세요 (URL)">
+# 보안 설정 (CORS): Vercel 등 외부 접속 허용
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class VideoRequest(BaseModel):
+    url: str
+
+def crawl_site(url: str):
+    """
+    URL을 받아서 제목, 본문, 이미지 리스트를 반환하는 수집반
+    """
+    # 1. 봇이 아닌 척 위장하기 (User-Agent 설정)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status() # 접속 에러 체크
         
-        <button onclick="ignite()" id="mainBtn" class="mt-6 w-full py-5 text-2xl font-black rounded-full ikea-btn transition-transform active:scale-95 flex justify-center items-center shadow-xl">
-            <span id="btnText">⚡ 영상 생성 요청 (IGNITE)</span>
-        </button>
-    </div>
-
-    <div class="mt-10 w-full max-w-2xl p-6 bg-white/10 border-2 border-[#ffdb00] rounded-xl h-48 overflow-y-auto font-mono text-sm" id="logArea">
-        <p class="ikea-yellow font-bold">> SYSTEM READY. WAITING FOR ORDER...</p>
-    </div>
-
-    <script>
-        async function ignite() {
-            const url = document.getElementById('urlInput').value;
-            const logArea = document.getElementById('logArea');
-            const btnText = document.getElementById('btnText');
-            const mainBtn = document.getElementById('mainBtn');
-            
-            if(!url) {
-                logArea.innerHTML += `<p class="text-red-300 font-bold">> ❌ ERROR: 링크를 입력해주세요.</p>`;
-                return;
-            }
-
-            // UI 변경 (로딩 시작)
-            btnText.innerText = "⚙️ 엔진 가동 중...";
-            mainBtn.disabled = true;
-            mainBtn.classList.add("opacity-50");
-            logArea.innerHTML += `<p class="text-white mt-2">> 📡 주문 전송 중: ${url}...</p>`;
-            logArea.scrollTop = logArea.scrollHeight; // 스크롤 자동 내림
-
-            try {
-                // ★ 사장님의 AWS 엔진으로 데이터를 보냅니다 ★
-                const response = await fetch("http://3.27.133.204:8000/ignite", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ url: url })
-                });
-
-                const data = await response.json();
-                
-                // 성공 메시지 출력
-                logArea.innerHTML += `<p class="ikea-yellow">> 📩 엔진 응답: ${data.message}</p>`;
-                logArea.innerHTML += `<p class="text-green-300 font-bold text-lg">> ✅ 접수 완료! (Status: ${data.status})</p>`;
-
-            } catch (error) {
-                console.error(error);
-                logArea.innerHTML += `<p class="text-red-400 font-bold mt-2">> ⚠️ 통신 오류 발생!</p>`;
-                logArea.innerHTML += `<p class="text-xs text-gray-200">Tip: 주소창 옆 '자물쇠'를 눌러 '안전하지 않은 콘텐츠'를 허용해주세요.</p>`;
-            }
-            
-            // UI 복구
-            btnText.innerText = "⚡ 영상 생성 요청 (IGNITE)";
-            mainBtn.disabled = false;
-            mainBtn.classList.remove("opacity-50");
-            logArea.scrollTop = logArea.scrollHeight;
+        # 2. HTML 분석 도구(BS4) 가동
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # 3. 데이터 추출
+        # (1) 제목 가져오기
+        title = soup.title.string if soup.title else "제목 없음"
+        
+        # (2) 이미지 가져오기 (img 태그 찾기)
+        images = []
+        for img in soup.find_all('img'):
+            src = img.get('src')
+            if src and src.startswith('http'):
+                # 너무 작은 아이콘이나 로고는 제외 (필터링)
+                images.append(src)
+        
+        # 상위 5개 이미지만 선택 (테스트용)
+        selected_images = images[:5]
+        
+        return {
+            "status": "success",
+            "title": title,
+            "image_count": len(images),
+            "images": selected_images
         }
-    </script>
-</body>
-</html>
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.get("/")
+def read_root():
+    return {"status": "Studio 100 Ton Crawler Ready", "ver": "2.0"}
+
+@app.post("/ignite")
+def ignite_engine(request: VideoRequest):
+    print(f"🔥 자재 수집 요청: {request.url}")
+    
+    # 크롤링 함수 실행
+    crawled_data = crawl_site(request.url)
+    
+    if crawled_data["status"] == "error":
+        return {"message": "수집 실패", "error": crawled_data["message"]}
+    
+    print(f"✅ 수집 성공: {crawled_data['title']}")
+    print(f"📸 이미지 발견: {crawled_data['image_count']}개")
+
+    return {
+        "status": "processing",
+        "message": f"분석 완료! 제목: [{crawled_data['title']}] / 이미지 {crawled_data['image_count']}장 확보",
+        "data": crawled_data
+    }

@@ -1,115 +1,165 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
-import requests
-from bs4 import BeautifulSoup
-import os
-from dotenv import load_dotenv
-from openai import OpenAI
-
-# 1. 비밀 금고(.env)에서 열쇠를 꺼내 GPT를 준비시킵니다
-load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=api_key)
-
-app = FastAPI()
-
-# 보안 설정 (CORS)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-class VideoRequest(BaseModel):
-    url: str
-
-# --- [기능 1] 자재 수집반 (쇼핑몰/뉴스 긁어오기) ---
-def crawl_site(url: str):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        soup = BeautifulSoup(response.text, 'html.parser')
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio 100 Ton - AI Video Generator</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Suit', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 15px;
+            background-color: #1e1e1e;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        h1 { margin-bottom: 20px; font-size: 2rem; color: #00ff88; }
+        input {
+            width: 80%;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background-color: #2c2c2c;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background-color: #00ff88;
+            color: #121212;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        button:hover { background-color: #00cc6a; }
         
-        # 제목 확보
-        title = soup.title.string if soup.title else "제목 없음"
+        /* 결과 화면 스타일 */
+        #result-area {
+            margin-top: 30px;
+            text-align: left;
+            display: none; /* 처음엔 숨김 */
+            background: #252525;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .script-box {
+            white-space: pre-line;
+            line-height: 1.6;
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        img { width: 100%; border-radius: 5px; }
         
-        # 본문 확보 (메타 태그 우선, 없으면 본문 텍스트)
-        content = ""
-        meta_desc = soup.find("meta", property="og:description")
-        if meta_desc:
-            content = meta_desc["content"]
+        /* 로딩 애니메이션 */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #00ff88;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🏭 Studio 100 Ton</h1>
+        <p>쇼핑몰/뉴스 링크를 넣으면 대본을 써드립니다.</p>
         
-        if len(content) < 50: 
-            content = soup.get_text()[:500].strip()
+        <input type="text" id="urlInput" placeholder="https://... (링크를 붙여넣으세요)">
+        <br>
+        <button onclick="igniteEngine()">⚡ IGNITE (영상 생성)</button>
 
-        # 이미지 확보
-        images = []
-        for img in soup.find_all('img'):
-            src = img.get('src')
-            if src and src.startswith('http'):
-                images.append(src)
-        
-        return {"title": title, "content": content, "images": images[:5], "status": "success"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+        <div class="loader" id="loader"></div>
 
-# --- [기능 2] 대본 작가 (GPT-4o) ---
-def generate_script(title, content):
-    print("🤖 GPT가 대본을 작성 중입니다...")
-    
-    # AI에게 역할을 부여하는 '프롬프트' (소스 79번 참조)
-    prompt = f"""
-    너는 100만 유튜버의 '쇼츠 대본 작가'야.
-    아래 내용을 바탕으로 사람들이 당장 사고 싶거나 클릭하게 만드는 30초 대본을 써줘.
-    
-    [상품/기사 정보]
-    제목: {title}
-    내용: {content}
-    
-    [작성 조건]
-    1. 첫 문장은 무조건 시선을 끄는 강력한 '후킹(Hook)'으로 시작할 것.
-    2. 전체 길이는 읽었을 때 딱 30초 분량으로.
-    3. 말투는 친근하고 흥분된 톤으로 ("~대박이죠?", "~미쳤습니다" 등).
-    4. 결과는 오직 대본 내용만 출력해. (설명 금지)
-    """
+        <div id="result-area">
+            <h3>✅ 분석 완료!</h3>
+            <p><strong>제목:</strong> <span id="res-title"></span></p>
+            
+            <h4>📜 AI 대본 (Script)</h4>
+            <div class="script-box" id="res-script"></div>
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o", 
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.choices.message.content
-    except Exception as e:
-        return f"대본 작성 실패: {str(e)}"
+            <h4>📸 확보된 이미지</h4>
+            <div class="image-grid" id="res-images"></div>
+        </div>
+    </div>
 
-@app.get("/")
-def read_root():
-    return {"status": "Studio 100 Ton Brain Attached", "power": "Active"}
+    <script>
+        async function igniteEngine() {
+            const url = document.getElementById('urlInput').value;
+            const loader = document.getElementById('loader');
+            const resultArea = document.getElementById('result-area');
 
-@app.post("/ignite")
-def ignite_engine(request: VideoRequest):
-    print(f"🔥 작업 시작: {request.url}")
-    
-    # 1. 크롤링 (재료 수집)
-    data = crawl_site(request.url)
-    if data["status"] == "error":
-        return {"message": "크롤링 실패", "error": data["message"]}
-    
-    print(f"✅ 데이터 확보: {data['title']}")
+            if (!url) { alert("링크를 입력해주세요!"); return; }
 
-    # 2. 대본 작성 (AI 가동)
-    script = generate_script(data['title'], data['content'])
-    print(f"📜 대본 완성! (앞부분): {script[:50]}...") 
+            // 화면 초기화
+            loader.style.display = "block";
+            resultArea.style.display = "none";
 
-    return {
-        "status": "success",
-        "message": "대본 작성 완료!",
-        "crawled_title": data['title'],
-        "script": script,  # 완성된 대본을 화면으로 보냄
-        "images": data['images']
-    }
+            try {
+                // ⚠️ 여기 주소를 사장님 AWS IP로 꼭 확인하세요! (Source 169 참조)
+                // 현재 IP: 3.27.133.204
+                const response = await fetch("http://3.27.133.204:8000/ignite", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+
+                if (data.status === "error") {
+                    alert("에러 발생: " + data.message);
+                } else {
+                    // 결과 보여주기
+                    document.getElementById('res-title').innerText = data.crawled_title;
+                    document.getElementById('res-script').innerText = data.script;
+                    
+                    // 이미지 뿌리기
+                    const imgContainer = document.getElementById('res-images');
+                    imgContainer.innerHTML = ""; // 기존 이미지 삭제
+                    data.images.forEach(src => {
+                        const img = document.createElement("img");
+                        img.src = src;
+                        imgContainer.appendChild(img);
+                    });
+
+                    resultArea.style.display = "block";
+                }
+            } catch (error) {
+                console.error(error);
+                alert("공장 연결 실패! (보안 설정이나 IP를 확인하세요)");
+            } finally {
+                loader.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>

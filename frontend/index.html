@@ -11,18 +11,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
-        /* [이케아 오리지널 색상 적용] */
+        /* [이케아 건물 테마: 파란 배경 + 노란 포인트] */
         :root {
-            --ikea-blue: #0058a3;      /* 이케아 건물 파란색 */
-            --ikea-yellow: #ffdb00;    /* 이케아 로고 노란색 */
-            --ikea-black: #111111;     /* 텍스트용 블랙 */
-            --ikea-grey: #f5f5f5;      /* 배경용 연회색 */
+            --ikea-blue: #0058a3;      /* 건물 외벽 색상 */
+            --ikea-yellow: #ffdb00;    /* 로고 색상 */
             --white: #ffffff;
+            --black: #111111;
         }
 
         body {
-            background-color: var(--white);
-            color: var(--ikea-black);
+            background-color: var(--ikea-blue); /* 🔥 배경을 파란색으로! */
+            color: var(--white); /* 기본 글씨는 흰색 (가독성 위해) */
             font-family: 'Noto Sans KR', sans-serif;
             margin: 0;
             display: flex;
@@ -31,29 +30,28 @@
             min-height: 100vh;
         }
 
-        /* 헤더: 이케아 로고 느낌 (파란 배경 + 노란 글씨 조합도 가능하지만, 깔끔하게 파란 글씨로) */
+        /* 헤더 */
         header {
             width: 100%;
-            background-color: var(--white);
-            padding: 40px 0 20px;
+            padding: 50px 0 20px;
             text-align: center;
-            border-bottom: 4px solid var(--ikea-yellow); /* 헤더 밑에 노란색 포인트 줄 추가! */
         }
 
         h1 {
-            font-size: 40px;
+            font-size: 50px;
             font-weight: 900; 
-            color: var(--ikea-blue); /* 이케아 블루 */
+            color: var(--ikea-yellow); /* 🔥 제목은 노란색 (이케아 간판처럼) */
             margin: 0;
             letter-spacing: -1.5px;
-            text-transform: uppercase; /* 대문자로 강조 */
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.3); /* 입체감 */
         }
         
         .subtitle {
-            font-size: 16px;
-            color: #484848;
+            font-size: 18px;
+            color: var(--white);
             margin-top: 10px;
             font-weight: 400;
+            opacity: 0.9;
         }
 
         /* 메인 컨테이너 */
@@ -64,65 +62,61 @@
             box-sizing: border-box;
         }
 
-        /* 입력창 */
+        /* 입력창 디자인 */
         .input-wrapper {
-            margin-top: 40px;
-            margin-bottom: 20px;
+            margin-top: 30px;
+            margin-bottom: 25px;
         }
         
         label {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 700;
             display: block;
             margin-bottom: 10px;
-            color: var(--ikea-blue); /* 라벨도 파란색으로 통일 */
+            color: var(--ikea-yellow); /* 라벨도 노란색으로 통일 */
         }
 
         input {
             width: 100%;
             padding: 20px;
             font-size: 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 40px; /* 둥글게 */
-            background-color: var(--ikea-grey);
+            border: none;
+            border-radius: 40px; 
+            background-color: var(--white); /* 입력창은 흰색이어야 글씨가 잘 보임 */
             box-sizing: border-box;
             font-family: 'Noto Sans KR', sans-serif;
-            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
         input:focus {
             outline: none;
-            border: 2px solid var(--ikea-blue); /* 포커스 시 파란색 */
-            background-color: var(--white);
+            border: 4px solid var(--ikea-yellow); /* 포커스되면 노란 테두리! */
         }
 
-        /* ✅ 버튼: 이케아 쇼핑백 색상 (파란 배경 + 노란 글씨 포인트) */
+        /* ✅ 버튼: 노란색 배경 + 파란 글씨 (주목도 최강) */
         button {
             width: 100%;
-            padding: 20px;
-            background-color: var(--ikea-blue); /* 이케아 블루 배경 */
-            color: var(--white); /* 흰색 글씨 */
-            font-size: 18px;
+            padding: 22px;
+            background-color: var(--ikea-yellow); /* 노란색 버튼 */
+            color: var(--ikea-blue); /* 파란색 글씨 */
+            font-size: 20px;
             font-weight: 900;
             border: none;
-            border-radius: 40px; /* 완전 둥근 캡슐형 */
+            border-radius: 40px; 
             cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(0, 88, 163, 0.3); /* 파란색 그림자 */
+            transition: all 0.2s;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
         }
         
-        /* 마우스 올렸을 때: 이케아 노란색이 살짝 보이게 */
         button:hover {
-            background-color: #004f91; 
-            color: var(--ikea-yellow); /* 글씨가 노란색으로 변함! */
-            transform: translateY(-2px);
+            transform: scale(1.03); /* 살짝 커짐 */
+            background-color: #ffea5c; /* 더 밝은 노란색 */
         }
 
-        /* 로딩 애니메이션: 파랑 & 노랑 */
+        /* 로딩 애니메이션: 노란색 */
         .loader {
             display: none;
-            border: 6px solid var(--ikea-grey);
-            border-top: 6px solid var(--ikea-blue);
-            border-right: 6px solid var(--ikea-yellow);
+            border: 6px solid rgba(255, 255, 255, 0.3);
+            border-top: 6px solid var(--ikea-yellow);
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -131,27 +125,28 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 결과 화면 */
+        /* 결과 화면: 흰색 박스 (가독성 확보) */
         #result-area {
             display: none;
-            margin-top: 40px;
+            margin-top: 50px;
             background-color: var(--white);
-            border: 2px solid var(--ikea-grey);
             padding: 30px;
             border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            color: var(--black);
         }
 
         h2 {
-            font-size: 22px;
-            color: var(--ikea-black);
+            font-size: 24px;
+            color: var(--ikea-blue); /* 결과 제목은 파란색 */
             margin-top: 0;
-            border-bottom: 2px solid var(--ikea-yellow); /* 제목 밑에 노란 줄 */
+            border-bottom: 3px solid var(--ikea-yellow);
             padding-bottom: 10px;
             display: inline-block;
         }
 
         .script-box {
-            background: var(--ikea-grey);
+            background: #f9f9f9;
             padding: 25px;
             border-radius: 10px;
             line-height: 1.8;
@@ -159,6 +154,7 @@
             white-space: pre-line;
             color: #333;
             margin-top: 20px;
+            border-left: 5px solid var(--ikea-blue);
         }
 
         .image-grid {
@@ -172,10 +168,6 @@
             width: 100%;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-        }
-        .image-grid img:hover {
-            transform: scale(1.05);
         }
 
     </style>
@@ -184,7 +176,7 @@
 
     <header>
         <h1>STUDIO 100 TON</h1>
-        <p class="subtitle">AI Video Generator</p>
+        <p class="subtitle">100억 가치의 영상을 만드는 AI 공장</p>
     </header>
 
     <div class="container">
@@ -194,13 +186,13 @@
         </div>
 
         <button onclick="igniteEngine()">
-            영상 생성 시작하기 (Ignite)
+            ⚡ 영상 생성 시작하기 (Ignite)
         </button>
 
         <div class="loader" id="loader"></div>
 
         <div id="result-area">
-            <h2>✅ 분석 완료: <span id="res-title" style="color:var(--ikea-blue)"></span></h2>
+            <h2>✅ 분석 완료: <span id="res-title"></span></h2>
             
             <p style="font-weight:700; margin-top:20px; color:var(--ikea-blue);">📜 AI 대본 (Script)</p>
             <div class="script-box" id="res-script"></div>
@@ -222,7 +214,7 @@
             resultArea.style.display = "none";
 
             try {
-                // 사장님 AWS 공장 주소 (Source 169 확인됨)
+                // 사장님 AWS 주소 (Source 169)
                 const response = await fetch("http://3.27.133.204:8000/ignite", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

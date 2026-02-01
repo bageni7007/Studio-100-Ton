@@ -3,10 +3,18 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 from bs4 import BeautifulSoup
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# 1. 비밀 금고(.env)에서 열쇠를 꺼내 GPT를 준비시킵니다
+load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key)
 
 app = FastAPI()
 
-# 보안 설정 (CORS): Vercel 등 외부 접속 허용
+# 보안 설정 (CORS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,66 +26,90 @@ app.add_middleware(
 class VideoRequest(BaseModel):
     url: str
 
+# --- [기능 1] 자재 수집반 (쇼핑몰/뉴스 긁어오기) ---
 def crawl_site(url: str):
-    """
-    URL을 받아서 제목, 본문, 이미지 리스트를 반환하는 수집반
-    """
-    # 1. 봇이 아닌 척 위장하기 (User-Agent 설정)
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
-    
     try:
         response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status() # 접속 에러 체크
-        
-        # 2. HTML 분석 도구(BS4) 가동
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # 3. 데이터 추출
-        # (1) 제목 가져오기
+        # 제목 확보
         title = soup.title.string if soup.title else "제목 없음"
         
-        # (2) 이미지 가져오기 (img 태그 찾기)
+        # 본문 확보 (메타 태그 우선, 없으면 본문 텍스트)
+        content = ""
+        meta_desc = soup.find("meta", property="og:description")
+        if meta_desc:
+            content = meta_desc["content"]
+        
+        if len(content) < 50: 
+            content = soup.get_text()[:500].strip()
+
+        # 이미지 확보
         images = []
         for img in soup.find_all('img'):
             src = img.get('src')
             if src and src.startswith('http'):
-                # 너무 작은 아이콘이나 로고는 제외 (필터링)
                 images.append(src)
         
-        # 상위 5개 이미지만 선택 (테스트용)
-        selected_images = images[:5]
-        
-        return {
-            "status": "success",
-            "title": title,
-            "image_count": len(images),
-            "images": selected_images
-        }
-
+        return {"title": title, "content": content, "images": images[:5], "status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+# --- [기능 2] 대본 작가 (GPT-4o) ---
+def generate_script(title, content):
+    print("🤖 GPT가 대본을 작성 중입니다...")
+    
+    # AI에게 역할을 부여하는 '프롬프트' (소스 79번 참조)
+    prompt = f"""
+    너는 100만 유튜버의 '쇼츠 대본 작가'야.
+    아래 내용을 바탕으로 사람들이 당장 사고 싶거나 클릭하게 만드는 30초 대본을 써줘.
+    
+    [상품/기사 정보]
+    제목: {title}
+    내용: {content}
+    
+    [작성 조건]
+    1. 첫 문장은 무조건 시선을 끄는 강력한 '후킹(Hook)'으로 시작할 것.
+    2. 전체 길이는 읽었을 때 딱 30초 분량으로.
+    3. 말투는 친근하고 흥분된 톤으로 ("~대박이죠?", "~미쳤습니다" 등).
+    4. 결과는 오직 대본 내용만 출력해. (설명 금지)
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o", 
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.choices.message.content
+    except Exception as e:
+        return f"대본 작성 실패: {str(e)}"
+
 @app.get("/")
 def read_root():
-    return {"status": "Studio 100 Ton Crawler Ready", "ver": "2.0"}
+    return {"status": "Studio 100 Ton Brain Attached", "power": "Active"}
 
 @app.post("/ignite")
 def ignite_engine(request: VideoRequest):
-    print(f"🔥 자재 수집 요청: {request.url}")
+    print(f"🔥 작업 시작: {request.url}")
     
-    # 크롤링 함수 실행
-    crawled_data = crawl_site(request.url)
+    # 1. 크롤링 (재료 수집)
+    data = crawl_site(request.url)
+    if data["status"] == "error":
+        return {"message": "크롤링 실패", "error": data["message"]}
     
-    if crawled_data["status"] == "error":
-        return {"message": "수집 실패", "error": crawled_data["message"]}
-    
-    print(f"✅ 수집 성공: {crawled_data['title']}")
-    print(f"📸 이미지 발견: {crawled_data['image_count']}개")
+    print(f"✅ 데이터 확보: {data['title']}")
+
+    # 2. 대본 작성 (AI 가동)
+    script = generate_script(data['title'], data['content'])
+    print(f"📜 대본 완성! (앞부분): {script[:50]}...") 
 
     return {
-        "status": "processing",
-        "message": f"분석 완료! 제목: [{crawled_data['title']}] / 이미지 {crawled_data['image_count']}장 확보",
-        "data": crawled_data
+        "status": "success",
+        "message": "대본 작성 완료!",
+        "crawled_title": data['title'],
+        "script": script,  # 완성된 대본을 화면으로 보냄
+        "images": data['images']
     }

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio 100 Ton</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0F1115; font-family: 'Courier New', Courier, monospace; color: #E0E6ED; }
+        .neon-text { text-shadow: 0 0 10px #FF4500; }
+        .neon-border:focus { box-shadow: 0 0 15px #00E5FF; outline: none; border-color: #00E5FF; }
+        .btn-glow:hover { box-shadow: 0 0 20px #FF4500; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen">
+
+    <!-- 로고 영역 -->
+    <div class="text-center mb-10">
+        <h1 class="text-6xl font-black tracking-tighter mb-2">
+            100 <span class="text-[#FF4500] neon-text">TON</span>
+        </h1>
+        <p class="text-[#00E5FF] text-sm tracking-widest">HYPER-SCALE VIDEO ENGINE</p>
+    </div>
+
+    <!-- 입력 엔진 -->
+    <div class="w-full max-w-2xl px-4">
+        <input type="text" id="urlInput" 
+            class="w-full p-6 bg-[#1C1F26] border-2 border-[#2D3748] rounded-lg text-xl text-white neon-border transition-all"
+            placeholder="상품 링크를 투입하세요 (Insert Link)">
+        
+        <button onclick="ignite()" class="mt-8 w-full py-4 bg-[#FF4500] text-white text-xl font-bold rounded shadow-lg btn-glow transition-all">
+            IGNITE (영상 생성 시작)
+        </button>
+    </div>
+
+    <!-- 로그 창 -->
+    <div class="mt-12 w-full max-w-2xl p-4 bg-black border border-[#1C1F26] rounded h-32 font-mono text-sm" id="logArea">
+        <p class="text-green-500">> System ready...</p>
+    </div>
+
+    <script>
+        function ignite() {
+            const url = document.getElementById('urlInput').value;
+            const logArea = document.getElementById('logArea');
+            
+            if(!url) {
+                logArea.innerHTML += `<p class="text-red-500">> Error: 링크가 없습니다.</p>`;
+                return;
+            }
+            logArea.innerHTML += `<p class="text-[#00E5FF]">> Input received: ${url}</p>`;
+            logArea.innerHTML += `<p class="text-yellow-500">> Engine Starting... (Test Mode)</p>`;
+        }
+    </script>
+</body>
+</html>
